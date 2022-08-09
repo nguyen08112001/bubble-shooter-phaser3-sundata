@@ -6,7 +6,10 @@ import AudioKeys from "~/consts/AudioKeys";
 
 export default class Preload extends Phaser.Scene {
   preload() {
-    this.load.image(TextureKeys.Background, "assets/game/background.png");
+    this.load.image(
+      TextureKeys.Background,
+      "https://mir-s3-cdn-cf.behance.net/project_modules/max_632/dc3b2546601081.585ad762e70eb.jpg"
+    );
     this.load.image(TextureKeys.Virus, "assets/game/coronavirus.png");
     // this.load.image(TextureKeys.VirusRed, 'assets/game/virus_red.png')
     this.load.image(TextureKeys.VirusRed, "assets/game/tile000.png");
@@ -14,6 +17,11 @@ export default class Preload extends Phaser.Scene {
     this.load.image(TextureKeys.VirusBlue, "assets/game/tile003.png");
     this.load.image(TextureKeys.VirusYellow, "assets/game/tile002.png");
     this.load.image(TextureKeys.VirusParticles, "assets/game/light_02.png");
+    this.load.atlas(
+      TextureKeys.FlareParticles,
+      "https://labs.phaser.io/assets/particles/flares.png",
+      "https://labs.phaser.io/assets/particles/flares.json"
+    );
     this.load.image(TextureKeys.Shooter, "assets/game/shooter.png");
 
     this.load.audio(
