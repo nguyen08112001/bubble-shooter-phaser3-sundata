@@ -7,12 +7,12 @@ const config: Phaser.Types.Core.GameConfig = {
   dom: {
     createContainer: true,
   },
-  backgroundColor: DarkColor,
+  backgroundColor: 0x001013,
   physics: {
     default: "arcade",
     arcade: {
       gravity: { y: 0 },
-      debug: true,
+      // debug: true,
     },
   },
   scale: {

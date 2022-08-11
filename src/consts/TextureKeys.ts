@@ -3,11 +3,12 @@ enum TextureKeys {
   Virus = "virus",
   VirusRed = "virus-red",
   VirusGreen = "virus-green",
-  VirusBlue = "virus-blue",
   VirusYellow = "virus-yellow",
   VirusParticles = "virus-particles",
   Shooter = "shooter",
   FlareParticles = "flare-particles",
+  BrokenGlass = "broken-glass",
+  BrokenPiece = "broken-piece",
 }
 
 export default TextureKeys;

@@ -1,79 +1,101 @@
-import Phaser from 'phaser'
-import Ball from './Ball'
+import Phaser from "phaser";
+import Ball from "./Ball";
 
-declare global
-{
-	interface IBallPool extends Phaser.Physics.Arcade.Group
-	{
-		spawn(x: number, y: number): IBall
-		despawn(ball: IBall)
-	}
+declare global {
+  interface IBallPool extends Phaser.Physics.Arcade.Group {
+    spawn(x: number, y: number): IBall;
+    despawn(ball: IBall);
+  }
 }
 
-export default class BallPool extends Phaser.Physics.Arcade.Group implements IBallPool
+export default class BallPool
+  extends Phaser.Physics.Arcade.Group
+  implements IBallPool
 {
-	private texture: string
+  private texture: string;
 
-	constructor(world: Phaser.Physics.Arcade.World, scene: Phaser.Scene, texture: string, config: Phaser.Types.Physics.Arcade.PhysicsGroupConfig | Phaser.Types.GameObjects.Group.GroupCreateConfig = {})
-	{
-		const defaults: Phaser.Types.Physics.Arcade.PhysicsGroupConfig | Phaser.Types.GameObjects.Group.GroupCreateConfig = {
-			classType: Ball,
-			maxSize: -1,
-			key: texture,
-			frame: 0,
-			active: false,
-			visible: false,
-			frameQuantity: 4
-		}
+  constructor(
+    world: Phaser.Physics.Arcade.World,
+    scene: Phaser.Scene,
+    texture: string,
+    config:
+      | Phaser.Types.Physics.Arcade.PhysicsGroupConfig
+      | Phaser.Types.GameObjects.Group.GroupCreateConfig = {}
+  ) {
+    const defaults:
+      | Phaser.Types.Physics.Arcade.PhysicsGroupConfig
+      | Phaser.Types.GameObjects.Group.GroupCreateConfig = {
+      classType: Ball,
+      maxSize: -1,
+      key: texture,
+      frame: 0,
+      active: false,
+      visible: false,
+      frameQuantity: 4,
+    };
 
-		super(world, scene, Object.assign(defaults, config))
+    super(world, scene, Object.assign(defaults, config));
 
-		this.texture = texture
-	}
+    this.texture = texture;
+  }
 
-	spawn(x: number, y: number)
-	{
-		const spawnExisting = this.countActive(false) > 0
+  spawn(x: number, y: number) {
+    const spawnExisting = this.countActive(false) > 0;
 
-		const ball: IBall = this.get(x, y, this.texture)
+    const ball: IBall = this.get(x, y, this.texture);
 
-		if (!ball)
-		{
-			return ball
-		}
+    if (!ball) {
+      return ball;
+    }
 
-		ball.useCircleCollider()
+    ball.setScale(ball.getScale());
+    // console.log(ball.scale);
 
-		ball.emit('on-spawned')
+    ball.useCircleCollider();
 
-		if (spawnExisting)
-		{
-			ball.setVisible(true)
-			ball.setActive(true)
-			this.world.add(ball.body)
-		}
+    ball.emit("on-spawned");
 
-		ball.setRandomColor()
+    if (spawnExisting) {
+      ball.setVisible(true);
+      ball.setActive(true);
+      this.world.add(ball.body);
+    }
 
-		return ball
-	}
+    ball.setRandomColor();
 
-	despawn(ball: IBall)
-	{
-		this.killAndHide(ball)
+    return ball;
+  }
 
-		this.world.remove(ball.body)
+  despawn(ball: IBall) {
+    this.killAndHide(ball);
 
-		ball.body.reset(0, 0)
-	}
+    this.world.remove(ball.body);
+
+    ball.body.reset(0, 0);
+  }
 }
 
-Phaser.GameObjects.GameObjectFactory.register('ballPool', function (texture: string, config: Phaser.Types.Physics.Arcade.PhysicsGroupConfig | Phaser.Types.GameObjects.Group.GroupCreateConfig = {}) {
-	// @ts-ignore
-	const pool = new BallPool(this.scene.physics.world, this.scene, texture, config)
+Phaser.GameObjects.GameObjectFactory.register(
+  "ballPool",
+  function (
+    texture: string,
+    config:
+      | Phaser.Types.Physics.Arcade.PhysicsGroupConfig
+      | Phaser.Types.GameObjects.Group.GroupCreateConfig = {}
+  ) {
+    // @ts-ignore
+    const pool = new BallPool(
+      // @ts-ignore
+      this.scene.physics.world,
+      // @ts-ignore
+      this.scene,
+      texture,
+      config
+    );
 
-	// @ts-ignore
-	this.updateList.add(pool)
+    // @ts-ignore
+    this.updateList.add(pool);
 
-	return pool
-})
+    return pool;
+  }
+);

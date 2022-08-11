@@ -1,8 +1,11 @@
 enum BallColor {
-  Red = 0xdb0b0b,
-  Grey = 0x808080,
-  Green = 0x0bdb23,
-  Yellow = 0xdbc60b,
+  // Red = 0xdb0b0b,
+  // Green = 0x0bdb23,
+  // Yellow = 0xdbc60b,
+
+  Red = 0xff0000,
+  Green = 0x00ff00,
+  Yellow = 0xffff00,
 
   Any = -1,
 }

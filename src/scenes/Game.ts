@@ -30,10 +30,11 @@ export default class Game extends Phaser.Scene {
   private sfx?: SoundEffectsController;
 
   private state = GameState.Playing;
+  private particles!: Phaser.GameObjects.Particles.ParticleEmitter;
 
   init() {
     this.state = GameState.Playing;
-    this.growthModel = new VirusGrowthModel(100);
+    this.growthModel = new VirusGrowthModel(150);
 
     this.sfx = new SoundEffectsController(this.sound);
   }
@@ -45,6 +46,7 @@ export default class Game extends Phaser.Scene {
     this.add
       .image(width * 0.5, height * 0.5, TextureKeys.Background)
       .setScale(DPR);
+    // .setTint(0x484848);
 
     this.physics.world.setBounds(0, 0, width, height);
     this.physics.world.setBoundsCollision(true, true, false, false);
@@ -106,6 +108,17 @@ export default class Game extends Phaser.Scene {
 
       this.handleShutdown();
     });
+
+    this.particles = this.add
+      .particles(TextureKeys.VirusParticles)
+      .setDepth(2000)
+      .createEmitter({
+        speed: { min: -500, max: 500 },
+        angle: { min: 0, max: 360 },
+        scale: { start: 0.3, end: 0 },
+        blendMode: Phaser.BlendModes.ADD,
+        lifespan: 300,
+      });
   }
 
   private handleGameWin() {
@@ -118,22 +131,11 @@ export default class Game extends Phaser.Scene {
     this.scene.run(SceneKeys.GameOver);
   }
 
-  private handleBallWillBeDestroyed(ball: IBall) {
+  private async handleBallWillBeDestroyed(ball: IBall) {
     const x = ball.x;
     const y = ball.y;
 
-    const particles = this.add.particles(TextureKeys.VirusParticles);
-    particles.setDepth(2000);
-    particles
-      .createEmitter({
-        speed: { min: -200, max: 200 },
-        angle: { min: 0, max: 360 },
-        scale: { start: 0.3, end: 0 },
-        blendMode: Phaser.BlendModes.ADD,
-        tint: ball.color,
-        lifespan: 300,
-      })
-      .explode(50, x, y);
+    console.log(123);
   }
 
   private handleShutdown() {

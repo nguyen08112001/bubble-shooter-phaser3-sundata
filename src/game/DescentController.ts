@@ -67,7 +67,7 @@ export default class DescentController {
   reversing() {
     if (this.state !== DescentState.Reversing) {
       return new Promise((resolve) => {
-        resolve();
+        resolve("success!");
       });
     }
 
@@ -79,10 +79,19 @@ export default class DescentController {
   update(dt: number) {
     switch (this.state) {
       case DescentState.Descending: {
-        this.ballGrid.moveBy(this.speed);
+        // this.ballGrid.moveBy(this.speed);
 
         const dy = this.ballGrid.height - this.ballGrid.bottom;
+
+        let speed =
+          (dy / this.ballGrid.height) *
+          (dy / this.ballGrid.height) *
+          window.devicePixelRatio;
+        this.ballGrid.moveBy(speed);
+        console.log(speed);
+
         if (dy < this.ballGrid.ballInterval * 5) {
+          console.log("spawnRow");
           this.ballGrid.spawnRow();
         }
         break;

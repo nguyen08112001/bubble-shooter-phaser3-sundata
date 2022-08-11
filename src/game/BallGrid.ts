@@ -1,9 +1,10 @@
-import Phaser from "phaser";
+import Phaser, { Physics } from "phaser";
 
-import BallLayoutData, { Red, Gre, Blu, Yel } from "./BallLayoutData";
+import BallLayoutData, { Red, Gre, Yel } from "./BallLayoutData";
 
 import BallColor, { colorIsMatch } from "./BallColor";
 import { Subject } from "rxjs";
+import TextureKeys from "~/consts/TextureKeys";
 // import BallState from '~/consts/BallState'
 
 interface IGridPosition {
@@ -66,8 +67,15 @@ export default class BallGrid {
     this.pool = pool;
 
     const sample = this.pool.spawn(0, 0);
-    this.size = new Phaser.Structs.Size(sample.width, sample.height);
+    this.size = new Phaser.Structs.Size(
+      sample.width * sample.getScale(),
+      sample.height * sample.getScale()
+    );
     this.pool.despawn(sample);
+  }
+
+  getPool() {
+    return this.pool;
   }
 
   destroy() {
@@ -179,12 +187,11 @@ export default class BallGrid {
 
     const matches = this.findMatchesAt(bRow, bCol, color);
     // minimum 3 matches required
-    this.animateAttachBounceAt(bRow, bCol, tx, ty, newBall);
     if (matches.length < 3) {
       this.ballsCount += 1;
       this.ballsAddedSubject.next(1);
       this.ballAttachedSubject.next(newBall);
-      // this.animateAttachBounceAt(bRow, bCol, tx, ty, newBall);
+      await this.animateAttachBounceAt(bRow, bCol, tx, ty, newBall);
       return;
     }
 
@@ -195,6 +202,7 @@ export default class BallGrid {
     const matchedBalls = this.removeFromGrid(matches);
 
     const orphanPositions = this.findOrphanedBalls();
+
     const orphans = this.removeFromGrid(orphanPositions).map((ball) => {
       ball.setActive(false);
       this.scene.physics.world.remove(ball.body);
@@ -218,6 +226,8 @@ export default class BallGrid {
 
     const body = newBall.body as Phaser.Physics.Arcade.StaticBody;
     body.updateFromGameObject();
+
+    await this.scaleMatches(matchedBalls);
 
     // remove matched balls
     matchedBalls.forEach((ball) => {
@@ -269,7 +279,7 @@ export default class BallGrid {
       return -1;
     }
 
-    const row = this.layoutData.getNextRow();
+    const row = this.layoutData.getNextRow(this.scene, this.size.width);
     const count = row.length;
 
     if (count <= 0) {
@@ -329,10 +339,6 @@ export default class BallGrid {
           b!.setColor(BallColor.Red);
           break;
 
-        case Blu:
-          b!.setColor(BallColor.Grey);
-          break;
-
         case Gre:
           b!.setColor(BallColor.Green);
           break;
@@ -387,7 +393,7 @@ export default class BallGrid {
           y: y + dy,
           offset: 0,
           ease: "Bounce.easeOut",
-          duration,
+          duration: 1000,
           onComplete: function () {
             // @ts-ignore
             this.ballWillBeDestroyed.next(orphan);
@@ -407,7 +413,7 @@ export default class BallGrid {
     await Promise.all(tasks);
   }
 
-  private animateAttachBounceAt(
+  private async animateAttachBounceAt(
     row: number,
     col: number,
     tx: number,
@@ -442,7 +448,7 @@ export default class BallGrid {
 
     timeline.play();
 
-    this.jiggleNeighbors(row, col);
+    await this.jiggleNeighbors(row, col);
   }
 
   private findRowAndColumns(ball: IBall) {
@@ -672,37 +678,86 @@ export default class BallGrid {
     const degrees = [firstNeightbors, secondNeighbors];
 
     const size = degrees.length;
-    for (let i = 0; i < size; ++i) {
-      const deg = degrees[i];
-      for (let j = 0; j < deg.length; ++j) {
-        const { row, col } = deg[j];
-        const ball = this.getAt(row, col);
-        if (!ball || ball === sourceBall) {
-          continue;
+
+    return new Promise((resolve) => {
+      for (let i = 0; i < size; ++i) {
+        const deg = degrees[i];
+        for (let j = 0; j < deg.length; ++j) {
+          const { row, col } = deg[j];
+          const ball = this.getAt(row, col);
+          if (!ball || ball === sourceBall) {
+            continue;
+          }
+
+          const factor = (size - i) / size;
+          const movement = 100 * factor;
+
+          const timeline = this.scene.tweens.createTimeline();
+          const y = ball.y;
+
+          timeline.add({
+            targets: ball,
+            y: y - movement,
+            duration: 100,
+            yoyo: true,
+            ease: "Power0",
+            onComplete: () => {
+              resolve("success!");
+            },
+          });
+
+          timeline.play();
         }
-
-        const factor = (size - i) / size;
-        const movement = 100 * factor;
-
-        const timeline = this.scene.tweens.createTimeline();
-        const y = ball.y;
-
-        timeline.add({
-          targets: ball,
-          y: y - movement,
-          duration: 100,
-        });
-
-        timeline.add({
-          targets: ball,
-          y,
-          duration: 100,
-          ease: "Back.easeOut",
-        });
-
-        timeline.play();
       }
-    }
+    });
+  }
+
+  private scaleMatches(matches: IBall[]) {
+    return new Promise((resolve) => {
+      for (let i = 0; i < matches.length; i++) {
+        const ball = matches[i];
+        const x = ball.x;
+        const y = ball.y;
+        this.scene.tweens.add({
+          targets: ball,
+          scale: ball.getScale() * 1.5,
+          delay: i * 50,
+          duration: 100,
+          ease: "Power0",
+          onComplete: (tween) => {
+            ball.setVisible(false);
+            var img = this.scene.add
+              .image(x, y, TextureKeys.BrokenGlass)
+              .setScale(0.1);
+            // img.setTint(ball.color);
+            this.scene.tweens.add({
+              targets: img,
+              scale: 0.5,
+              alpha: 0,
+              duration: 3000,
+              ease: "Power4",
+            });
+
+            this.scene.add
+              .particles(TextureKeys.BrokenPiece)
+              .createEmitter({
+                speed: { min: -200, max: 200 },
+                angle: { min: 0, max: 360 },
+                scale: { start: 1, end: 0 },
+                alpha: { start: 1, end: 0 },
+                blendMode: "ADD",
+                active: true,
+                lifespan: 3000,
+                gravityY: 50,
+                tint: { start: ball.color, end: 0xffffff },
+                rotate: { start: 0, end: 360 * 5, random: true },
+              })
+              .explode(5, x, y);
+            if (i === matches.length - 1) resolve();
+          },
+        });
+      }
+    });
   }
 
   private getNeighbors(row: number, col: number, includeBottom = false) {
@@ -748,7 +803,7 @@ export default class BallGrid {
       // if asking about a row that has not been created yet
       // check row above and invert
       const rowList = this.grid[row - 1] as RowList;
-      return !rowList.isStaggered;
+      return !rowList?.isStaggered;
     }
 
     const rowList = this.grid[row] as RowList;

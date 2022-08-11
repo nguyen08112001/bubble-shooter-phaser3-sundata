@@ -2,12 +2,9 @@ import Phaser from "phaser";
 import BallColor from "./BallColor";
 import TextureKeys from "~/consts/TextureKeys";
 
-const ALL_COLORS = [
-  BallColor.Red,
-  BallColor.Grey,
-  BallColor.Green,
-  BallColor.Yellow,
-];
+const ALL_COLORS = [BallColor.Red, BallColor.Green, BallColor.Yellow];
+
+const DPR = window.devicePixelRatio;
 
 declare global {
   interface IBall extends Phaser.Physics.Arcade.Sprite {
@@ -20,6 +17,7 @@ declare global {
     setColor(color: BallColor): IBall;
     useCircleCollider(): IBall;
     launch(direction: Phaser.Math.Vector2): void;
+    getScale(): number;
   }
 }
 
@@ -28,6 +26,7 @@ export default class Ball
   implements IBall
 {
   private _color = BallColor.Red;
+  private _scale = DPR / 5;
   private _emitter: Phaser.GameObjects.Particles.ParticleEmitter | undefined;
 
   get color() {
@@ -54,7 +53,12 @@ export default class Ball
     frame: string = ""
   ) {
     super(scene, x, y, texture, frame);
+    this.setScale(this._scale);
     this.setRandomColor();
+  }
+
+  getScale() {
+    return this._scale;
   }
 
   setRandomColor() {
@@ -73,10 +77,6 @@ export default class Ball
         this.setTexture(TextureKeys.VirusGreen);
         break;
 
-      case BallColor.Grey:
-        this.setTexture(TextureKeys.VirusBlue);
-        break;
-
       case BallColor.Yellow:
         this.setTexture(TextureKeys.VirusYellow);
         break;
@@ -89,12 +89,15 @@ export default class Ball
     const radius = this.radius;
     const usedRadius = this.physicsRadius;
     const diff = radius - usedRadius;
+    console.log(this.radius, this.physicsRadius);
     this.setCircle(usedRadius, diff, diff);
 
     return this;
   }
 
-  launch(direction: Phaser.Math.Vector2, speed = 5000) {
+  launch(direction: Phaser.Math.Vector2) {
+    const DPR = window.devicePixelRatio;
+    const speed = 1000 * DPR;
     this.setCollideWorldBounds(true, 1, 1);
 
     this.body.x = this.x;
@@ -114,12 +117,11 @@ export default class Ball
       .setDepth(2000)
       .createEmitter({
         frame: ["white"],
-        radial: false,
-        lifespan: 1000,
-        speedX: { min: -1000, max: 1000 },
-        // quantity: 2,
-        maxParticles: 100,
-        scale: { start: 1, end: 0, ease: "Power3" },
+        lifespan: 500,
+        speedX: { min: -100, max: 100 },
+        speedY: { min: -100, max: 100 },
+        quantity: 10,
+        scale: { start: 0.5, end: 0, ease: "Power2" },
         blendMode: "ADD",
         tint: this.color,
         follow: this,

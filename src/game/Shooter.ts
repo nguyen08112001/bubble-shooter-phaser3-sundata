@@ -112,11 +112,9 @@ export default class Shooter
 
     this.ball.x = this.x - vec.x * (RADIUS + ballRadius + GAP);
     this.ball.y = this.y - vec.y * (RADIUS + ballRadius + GAP);
-    this.ball.scale = 0.5;
     this.ball.y += 500;
     this.scene.add.tween({
       targets: this.ball,
-      scale: 1,
       y: "-= 500",
       ease: "Bounce.easeOut",
       duration: 300,

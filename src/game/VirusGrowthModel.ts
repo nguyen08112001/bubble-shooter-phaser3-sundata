@@ -1,126 +1,107 @@
-import { Observable, BehaviorSubject } from 'rxjs'
+import { Observable, BehaviorSubject } from "rxjs";
 
-declare global
-{
-	interface IGrowthModel
-	{
-		readonly population: number
+declare global {
+  interface IGrowthModel {
+    readonly population: number;
 
-		getNext(count: number): number
-		onPopulationChanged(): Observable<number>
-		update(dt: number)
-	}
+    getNext(count: number): number;
+    onPopulationChanged(): Observable<number>;
+    update(dt: number);
+  }
 }
 
-export default class VirusGrowthModel implements IGrowthModel
-{
-	private accumulatedTime = 0
-	private populationCount = 0
+export default class VirusGrowthModel implements IGrowthModel {
+  private accumulatedTime = 0;
+  private populationCount = 0;
 
-	private populationChangedSubject: BehaviorSubject<number>
+  private populationChangedSubject: BehaviorSubject<number>;
 
-	get population()
-	{
-		return this.populationCount
-	}
+  get population() {
+    return this.populationCount;
+  }
 
-	constructor(initialPopulation = 0)
-	{
-		this.populationCount = initialPopulation
-		this.populationChangedSubject = new BehaviorSubject<number>(initialPopulation)
-	}
+  constructor(initialPopulation = 0) {
+    this.populationCount = initialPopulation;
+    this.populationChangedSubject = new BehaviorSubject<number>(
+      initialPopulation
+    );
+  }
 
-	onPopulationChanged()
-	{
-		return this.populationChangedSubject.asObservable()
-	}
+  onPopulationChanged() {
+    return this.populationChangedSubject.asObservable();
+  }
 
-	getNext(count: number)
-	{
-		if (count > this.populationCount)
-		{
-			const total = this.populationCount
-			this.decreatePopulation(total)
-			return total
-		}
+  getNext(count: number) {
+    if (count > this.populationCount) {
+      const total = this.populationCount;
+      this.decreatePopulation(total);
+      return total;
+    }
 
-		this.decreatePopulation(count)
-		return count
-	}
+    this.decreatePopulation(count);
+    return count;
+  }
 
-	update(dt: number)
-	{
-		if (this.populationCount <= 0)
-		{
-			return
-		}
+  update(dt: number) {
+    if (this.populationCount <= 0) {
+      return;
+    }
 
-		this.accumulatedTime += dt
+    this.accumulatedTime += dt;
 
-		const rate = this.getGrowthRate()
+    const rate = this.getGrowthRate();
 
-		if (this.accumulatedTime < rate)
-		{
-			return
-		}
+    if (this.accumulatedTime < rate) {
+      return;
+    }
 
-		// increase by 10% of population
-		const increase = Math.floor(this.populationCount * 0.1)
+    // increase by 10% of population
+    const increase = Math.floor(this.populationCount * 0.1);
 
-		this.increasePopulation(increase)
-		
-		this.accumulatedTime = this.accumulatedTime - rate
-	}
+    this.increasePopulation(increase);
 
-	private getGrowthRate()
-	{
-		if (this.populationCount < 1000)
-		{
-			return 1000
-		}
+    this.accumulatedTime = this.accumulatedTime - rate;
+  }
 
-		if (this.populationCount < 5000)
-		{
-			return 2000
-		}
+  private getGrowthRate() {
+    if (this.populationCount < 1000) {
+      return 1000;
+    }
 
-		if (this.populationCount < 10000)
-		{
-			return 3000
-		}
+    if (this.populationCount < 5000) {
+      return 2000;
+    }
 
-		if (this.populationCount < 50000)
-		{
-			return 3500
-		}
+    if (this.populationCount < 10000) {
+      return 3000;
+    }
 
-		if (this.populationCount < 100000)
-		{
-			return 5000
-		}
+    if (this.populationCount < 50000) {
+      return 3500;
+    }
 
-		return 5500
-	}
+    if (this.populationCount < 100000) {
+      return 5000;
+    }
 
-	private increasePopulation(amount: number)
-	{
-		if (this.populationCount + amount >= Number.MAX_SAFE_INTEGER)
-		{
-			return
-		}
+    return 5500;
+  }
 
-		this.populationCount += amount
-		this.populationChangedSubject.next(this.populationCount)
-	}
+  private increasePopulation(amount: number) {
+    if (this.populationCount + amount >= Number.MAX_SAFE_INTEGER) {
+      return;
+    }
 
-	private decreatePopulation(amount: number)
-	{
-		if (this.populationCount - amount < 0)
-		{
-			amount = this.populationCount
-		}
+    this.populationCount += amount;
+    this.populationChangedSubject.next(this.populationCount);
+  }
 
-		this.populationCount -= amount
-		this.populationChangedSubject.next(this.populationCount)
-	}
+  private decreatePopulation(amount: number) {
+    if (this.populationCount - amount < 0) {
+      amount = this.populationCount;
+    }
+
+    this.populationCount -= amount;
+    this.populationChangedSubject.next(this.populationCount);
+  }
 }
