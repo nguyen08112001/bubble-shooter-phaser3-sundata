@@ -2,14 +2,14 @@ import Phaser from "phaser";
 import Ball from "./Ball";
 
 declare global {
-  interface IStaticBallPool extends Phaser.Physics.Arcade.StaticGroup {
+  interface IStaticBallPool extends Phaser.Physics.Arcade.Group {
     spawn(x: number, y: number): IBall;
     despawn(ball: IBall);
   }
 }
 
 export default class StaticBallPool
-  extends Phaser.Physics.Arcade.StaticGroup
+  extends Phaser.Physics.Arcade.Group
   implements IStaticBallPool
 {
   private texture: string;
@@ -32,9 +32,14 @@ export default class StaticBallPool
       active: false,
       visible: false,
       frameQuantity: 30,
+      immovable: true,
+      allowGravity: false,
+      runChildUpdate: true
     };
 
     super(world, scene, Object.assign(defaults, config));
+
+    this.active = true
 
     this.texture = texture;
   }
@@ -50,31 +55,37 @@ export default class StaticBallPool
 
     ball.setScale(ball.getScale());
 
+    this.scene.physics.add.existing(ball)
+
+    const body = ball.body as Phaser.Physics.Arcade.Body;
+
     ball.useCircleCollider();
+
 
     ball.emit("on-spawned");
 
     if (spawnExisting) {
       ball.setVisible(true);
       ball.setActive(true);
-      this.world.add(ball.body);
 
+      this.world.add(body);
+      body.enable = true
       ball.setRandomColor();
+      body.allowGravity = false;
+      body.setImmovable(true)
     }
-
-    const body = ball.body as Phaser.Physics.Arcade.StaticBody;
-    body.updateFromGameObject();
 
     return ball;
   }
 
   despawn(ball: IBall) {
     this.killAndHide(ball);
-
+    ball.getShadow().setVisible(false)
+    ball.body.enable = false
     this.world.remove(ball.body);
-
     ball.alpha = 1;
     ball.body.reset(0, 0);
+    ball.updateShadowPosition()
   }
 }
 

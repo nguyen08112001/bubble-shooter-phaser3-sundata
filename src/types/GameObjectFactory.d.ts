@@ -7,5 +7,6 @@ declare namespace Phaser.GameObjects
 
 		ballPool(texture: string, config?: Phaser.Types.Physics.Arcade.PhysicsGroupConfig | Phaser.Types.GameObjects.Group.GroupCreateConfig): IBallPool
 		staticBallPool(texture: string, config?: Phaser.Types.Physics.Arcade.PhysicsGroupConfig | Phaser.Types.GameObjects.Group.GroupCreateConfig): IStaticBallPool
+		dynamicBallPool(texture: string, config?: Phaser.Types.Physics.Arcade.PhysicsGroupConfig | Phaser.Types.GameObjects.Group.GroupCreateConfig): IDynamicBallPool
 	}
 }

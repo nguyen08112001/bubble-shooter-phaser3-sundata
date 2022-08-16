@@ -5,6 +5,7 @@ import TextureKeys from "~/consts/TextureKeys";
 import "~/game/Shooter";
 import "~/game/BallPool";
 import "~/game/StaticBallPool";
+import "~/game/DynamicBallPool";
 import BallGrid from "~/game/BallGrid";
 import BallLayoutData from "~/game/BallLayoutData";
 import VirusGrowthModel from "~/game/VirusGrowthModel";
@@ -31,6 +32,9 @@ export default class Game extends Phaser.Scene {
 
   private state = GameState.Playing;
   private particles!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private  staticBallPool!: IStaticBallPool;
+  private  ballPool!: IBallPool;
+  private  dynamicBallPool!: IDynamicBallPool;
 
   init() {
     this.state = GameState.Playing;
@@ -54,21 +58,29 @@ export default class Game extends Phaser.Scene {
     this.shooter = this.add.shooter(width * 0.5, height - 30 * DPR, "");
     this.shooter.setGuide(new ShotGuide(this));
 
-    const ballPool = this.add.ballPool(TextureKeys.Virus);
-    this.shooter.setBallPool(ballPool);
+    this.ballPool = this.add.ballPool(TextureKeys.Virus);
+    this.shooter.setBallPool(this.ballPool);
     this.shooter.attachBall();
 
-    const staticBallPool = this.add.staticBallPool(TextureKeys.Virus);
+    this.staticBallPool = this.add.staticBallPool(TextureKeys.Virus);
 
-    this.grid = new BallGrid(this, staticBallPool);
+    this.dynamicBallPool = this.add.dynamicBallPool(TextureKeys.Virus);
+
+
+    this.grid = new BallGrid(this, this.staticBallPool);
     this.grid.setLayoutData(new BallLayoutData(this.growthModel)).generate();
 
     this.physics.add.collider(
-      ballPool,
-      staticBallPool,
+      this.ballPool,
+      this.staticBallPool,
       this.handleBallHitGrid,
       this.processBallHitGrid,
       this
+    );
+    
+    this.physics.add.collider(
+      this.dynamicBallPool,
+      this.staticBallPool
     );
 
     this.descentController = new DescentController(
@@ -134,8 +146,25 @@ export default class Game extends Phaser.Scene {
   private async handleBallWillBeDestroyed(ball: IBall) {
     const x = ball.x;
     const y = ball.y;
+    const color = ball.color
+    this.staticBallPool.despawn(ball);
 
-    console.log(123);
+    // let newBall = this.pool.spawn(x, y).setColor(color)
+    // let newBall = this.add.ball(x, y, TextureKeys.VirusYellow).setColor(color)
+    let newBall = this.dynamicBallPool.spawn(x, y).setColor(color)
+
+    newBall.useMediumCircleCollider()
+    const body = newBall.body as Phaser.Physics.Arcade.Body;
+    body.allowGravity = true
+    body.setImmovable(false)
+
+    newBall.setMass(40)
+    newBall.setBounce(1, 0.8)
+    newBall.setFriction(0, 0)
+    newBall.setCollideWorldBounds(true, 1, 1)
+
+    this.physics.add.collider(newBall, this.staticBallPool, (ball1, ball2) => {
+    })
   }
 
   private handleShutdown() {
@@ -208,6 +237,7 @@ export default class Game extends Phaser.Scene {
   }
 
   update(t, dt) {
+
     if (this.state === GameState.GameOver || this.state === GameState.GameWin) {
       return;
     }

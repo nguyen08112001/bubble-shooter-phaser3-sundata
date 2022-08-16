@@ -204,8 +204,6 @@ export default class BallGrid {
     const orphanPositions = this.findOrphanedBalls();
 
     const orphans = this.removeFromGrid(orphanPositions).map((ball) => {
-      ball.setActive(false);
-      this.scene.physics.world.remove(ball.body);
       return ball;
     });
 
@@ -224,24 +222,28 @@ export default class BallGrid {
       });
     });
 
-    const body = newBall.body as Phaser.Physics.Arcade.StaticBody;
-    body.updateFromGameObject();
+    const body = newBall.body as Phaser.Physics.Arcade.Body;
 
-    await this.scaleMatches(matchedBalls);
+    // await this.scaleMatches(matchedBalls);
 
     // remove matched balls
     matchedBalls.forEach((ball) => {
       this.ballWillBeDestroyed.next(ball);
-      this.pool.despawn(ball);
+      this.handleDestroyBall(ball);
     });
 
     const destroyedCount = matches.length + orphans.length;
     this.ballsDestroyedSubject.next(destroyedCount);
     this.ballsCount -= destroyedCount;
 
-    if (orphans.length > 0) {
-      await this.animateOrphans(orphans);
-    }
+    // if (orphans.length > 0) {
+    //   await this.animateOrphans(orphans);
+    // }
+
+    orphans.forEach((ball) => {
+      this.ballWillBeDestroyed.next(ball);
+      this.handleDestroyBall(ball);
+    })
   }
 
   generate(rows = 6) {
@@ -266,9 +268,9 @@ export default class BallGrid {
     for (let i = 0; i < count; ++i) {
       const b = balls[i] as IBall;
       b.y += dy;
+      b.setDepth(1)
 
-      const body = b.body as Phaser.Physics.Arcade.StaticBody;
-      body.updateFromGameObject();
+      const body = b.body as Phaser.Physics.Arcade.Body;
     }
 
     return this;
@@ -292,6 +294,13 @@ export default class BallGrid {
     this.ballsAddedSubject.next(count);
 
     return row.length;
+  }
+
+  private handleDestroyBall(ball: IBall) {
+    const x = ball.x;
+    const y = ball.y;
+    
+
   }
 
   private addRowToFront(row: string[]) {
@@ -441,8 +450,7 @@ export default class BallGrid {
       duration: 50,
       ease: "Back.easeOut",
       onComplete: () => {
-        const body = newBall.body as Phaser.Physics.Arcade.StaticBody;
-        body.updateFromGameObject();
+        const body = newBall.body as Phaser.Physics.Arcade.Body;
       },
     });
 

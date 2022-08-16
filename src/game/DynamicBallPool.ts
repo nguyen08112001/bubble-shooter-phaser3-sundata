@@ -2,15 +2,15 @@ import Phaser from "phaser";
 import Ball from "./Ball";
 
 declare global {
-  interface IBallPool extends Phaser.Physics.Arcade.Group {
+  interface IDynamicBallPool extends Phaser.Physics.Arcade.Group {
     spawn(x: number, y: number): IBall;
     despawn(ball: IBall);
   }
 }
 
-export default class BallPool
+export default class DynamicBallPool
   extends Phaser.Physics.Arcade.Group
-  implements IBallPool
+  implements IDynamicBallPool
 {
   private texture: string;
 
@@ -32,11 +32,17 @@ export default class BallPool
       active: false,
       visible: false,
       frameQuantity: 4,
+      runChildUpdate: true
     };
 
     super(world, scene, Object.assign(defaults, config));
-
+    this.active = true
     this.texture = texture;
+
+    this.scene.game.events.on("ball-over-scene", (ball) => {
+        console.log("ball-over-scene")
+        this.despawn(ball)
+    })
   }
 
   spawn(x: number, y: number) {
@@ -80,7 +86,7 @@ export default class BallPool
 }
 
 Phaser.GameObjects.GameObjectFactory.register(
-  "ballPool",
+  "dynamicBallPool",
   function (
     texture: string,
     config:
@@ -88,7 +94,7 @@ Phaser.GameObjects.GameObjectFactory.register(
       | Phaser.Types.GameObjects.Group.GroupCreateConfig = {}
   ) {
     // @ts-ignore
-    const pool = new BallPool(
+    const pool = new DynamicBallPool(
       // @ts-ignore
       this.scene.physics.world,
       // @ts-ignore

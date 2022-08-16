@@ -88,7 +88,7 @@ export default class DescentController {
           (dy / this.ballGrid.height) *
           window.devicePixelRatio;
         this.ballGrid.moveBy(speed);
-        console.log(speed);
+        // console.log(speed);
 
         if (dy < this.ballGrid.ballInterval * 5) {
           console.log("spawnRow");
@@ -124,7 +124,7 @@ export default class DescentController {
       onUpdate: function (tween: Phaser.Tweens.Tween) {
         const v = tween.getValue();
         const diff = v - grid.bottom;
-        grid.moveBy(diff);
+        // grid.moveBy(diff);
       },
       onUpdateScope: this,
       onComplete: function () {

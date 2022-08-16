@@ -155,7 +155,7 @@ export default class Shooter
       this.ball.x,
       this.ball.y,
       vec,
-      physicsRadius,
+      physicsRadius * 0.5,
       this.ball.color
     );
   }
