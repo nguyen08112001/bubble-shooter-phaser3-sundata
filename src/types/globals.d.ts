@@ -1,4 +1,5 @@
 declare interface Window
 {
-	WebFont: any
+	WebFont: any,
+  game: Phaser.Game
 }

@@ -5,23 +5,25 @@ import IShotGuide from "~/types/IShotGuide";
 
 const DPR = window.devicePixelRatio;
 
-class GuideCricle extends Phaser.GameObjects.Arc {
+class GuideCircle extends Phaser.GameObjects.Arc {
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 5 * DPR, 0, 360, false, LightColor, 1);
+    super(scene, x, y, 4 * DPR, 0, 360, false, LightColor, 1);
   }
 }
 
 export default class ShotGuide implements IShotGuide {
   private scene: Phaser.Scene;
   private group: Phaser.GameObjects.Group;
+  private toggleCurrent: number = 41;
+  private toggleDistance: number = 40;
 
-  private guides: GuideCricle[] = [];
+  private guides: GuideCircle[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
 
     this.group = scene.add.group({
-      classType: GuideCricle,
+      classType: GuideCircle,
     });
   }
 
@@ -33,11 +35,16 @@ export default class ShotGuide implements IShotGuide {
     color: number = LightColor
   ) {
     const width = this.scene.scale.width;
-    const count = 50;
+    const count = 1000;
 
     if (this.guides.length <= 0) {
       for (let i = 0; i < count; ++i) {
-        const guide = this.group.get(0, 0) as GuideCricle;
+        this.toggleCurrent--;
+        if ((this.toggleCurrent + i) % this.toggleDistance != 0 ) {
+          return;
+        }
+
+        const guide = this.group.get(0, 0) as GuideCircle;
         guide.setActive(true);
         guide.setVisible(true);
         guide.fillColor = color;
@@ -45,10 +52,10 @@ export default class ShotGuide implements IShotGuide {
       }
     }
 
-    const stepInterval = 20 * DPR;
+
+    const stepInterval = DPR / 2;
     let vx = direction.x;
     const vy = direction.y;
-    let alpha = 1;
 
     x += vx * radius;
     y += vy * radius;
@@ -73,14 +80,24 @@ export default class ShotGuide implements IShotGuide {
       const guide = this.guides[i];
       guide.x = x;
       guide.y = y;
-      guide.alpha = alpha;
 
-      // alpha *= 0.8
+      if ((this.toggleCurrent + i) % this.toggleDistance == 0 ) {
+        guide.setVisible(true);
+        guide.setActive(true);
+      } else {
+        guide.setVisible(false);
+        guide.setActive(false);
+      } 
+
     }
+
+    this.toggleCurrent--;
+    if (this.toggleCurrent === 0) this.toggleCurrent = this.toggleDistance
   }
 
   hide() {
     this.guides.forEach((guide) => this.group.killAndHide(guide));
     this.guides.length = 0;
+    this.toggleCurrent = this.toggleDistance + 1
   }
 }

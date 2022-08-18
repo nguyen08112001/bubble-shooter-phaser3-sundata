@@ -12,3 +12,5 @@ const game = new Phaser.Game(config)
 registerScenes(game)
 
 game.scene.start(SceneKeys.Bootstrap)
+
+window.game = game

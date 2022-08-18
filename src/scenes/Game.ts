@@ -33,12 +33,12 @@ export default class Game extends Phaser.Scene {
   private state = GameState.Playing;
   private particles!: Phaser.GameObjects.Particles.ParticleEmitter;
   private  staticBallPool!: IStaticBallPool;
-  private  ballPool!: IBallPool;
   private  dynamicBallPool!: IDynamicBallPool;
+  private  ballPool!: IBallPool;
 
   init() {
     this.state = GameState.Playing;
-    this.growthModel = new VirusGrowthModel(150);
+    this.growthModel = new VirusGrowthModel(500);
 
     this.sfx = new SoundEffectsController(this.sound);
   }
@@ -49,7 +49,7 @@ export default class Game extends Phaser.Scene {
 
     this.add
       .image(width * 0.5, height * 0.5, TextureKeys.Background)
-      .setScale(DPR);
+      // .setScale(DPR);
     // .setTint(0x484848);
 
     this.physics.world.setBounds(0, 0, width, height);
@@ -66,7 +66,6 @@ export default class Game extends Phaser.Scene {
 
     this.dynamicBallPool = this.add.dynamicBallPool(TextureKeys.Virus);
 
-
     this.grid = new BallGrid(this, this.staticBallPool);
     this.grid.setLayoutData(new BallLayoutData(this.growthModel)).generate();
 
@@ -76,6 +75,11 @@ export default class Game extends Phaser.Scene {
       this.handleBallHitGrid,
       this.processBallHitGrid,
       this
+    );
+		
+		this.physics.add.collider(
+      this.dynamicBallPool,
+      this.dynamicBallPool
     );
     
     this.physics.add.collider(
@@ -99,7 +103,7 @@ export default class Game extends Phaser.Scene {
       if (count > 0) {
         return;
       }
-
+      return
       this.handleGameWin();
     });
 
@@ -148,23 +152,19 @@ export default class Game extends Phaser.Scene {
     const y = ball.y;
     const color = ball.color
     this.staticBallPool.despawn(ball);
-
+    
     // let newBall = this.pool.spawn(x, y).setColor(color)
     // let newBall = this.add.ball(x, y, TextureKeys.VirusYellow).setColor(color)
     let newBall = this.dynamicBallPool.spawn(x, y).setColor(color)
 
-    newBall.useMediumCircleCollider()
+    newBall.useCircleCollider()
     const body = newBall.body as Phaser.Physics.Arcade.Body;
     body.allowGravity = true
-    body.setImmovable(false)
 
-    newBall.setMass(40)
-    newBall.setBounce(1, 0.8)
-    newBall.setFriction(0, 0)
+    newBall.setBounce(1, 1)
     newBall.setCollideWorldBounds(true, 1, 1)
 
-    this.physics.add.collider(newBall, this.staticBallPool, (ball1, ball2) => {
-    })
+    newBall.setVelocity(Phaser.Math.Between(-500, 500), 0)
   }
 
   private handleShutdown() {

@@ -31,7 +31,7 @@ export default class BallPool
       frame: 0,
       active: false,
       visible: false,
-      frameQuantity: 4,
+      frameQuantity: 0,
     };
 
     super(world, scene, Object.assign(defaults, config));
@@ -55,15 +55,16 @@ export default class BallPool
     ball.emit("on-spawned");
 
     if (spawnExisting) {
-        const body = ball.body as Phaser.Physics.Arcade.Body;
-        ball.setVisible(true);
-        ball.setActive(true);
-        this.world.add(body);
-        body.enable = true
-        ball.setRandomColor();
-        body.allowGravity = false;
-        body.setImmovable(true)
     }
+
+    const body = ball.body as Phaser.Physics.Arcade.Body;
+    ball.setVisible(true);
+    ball.setActive(true);
+    this.world.add(body);
+    body.enable = true;
+    ball.setRandomColor();
+    body.allowGravity = false;
+    body.setImmovable(true);
 
     ball.setRandomColor();
 
@@ -72,7 +73,7 @@ export default class BallPool
 
   despawn(ball: IBall) {
     this.killAndHide(ball);
-    ball.body.enable = false
+    ball.body.enable = false;
     this.world.remove(ball.body);
     ball.alpha = 1;
     ball.body.reset(0, 0);

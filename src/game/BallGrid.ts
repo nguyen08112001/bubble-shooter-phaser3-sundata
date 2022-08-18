@@ -5,6 +5,7 @@ import BallLayoutData, { Red, Gre, Yel } from "./BallLayoutData";
 import BallColor, { colorIsMatch } from "./BallColor";
 import { Subject } from "rxjs";
 import TextureKeys from "~/consts/TextureKeys";
+import props from "~/utils/convertPosition";
 // import BallState from '~/consts/BallState'
 
 interface IGridPosition {
@@ -45,7 +46,7 @@ export default class BallGrid {
   }
 
   get ballInterval() {
-    return this.size.height * 0.8;
+    return this.size.height * 0.9;
   }
 
   get bottom() {
@@ -59,7 +60,7 @@ export default class BallGrid {
       return 0;
     }
 
-    return ball.y + ball.radius;
+    return ball.y + ball.physicsRadius;
   }
 
   constructor(scene: Phaser.Scene, pool: IStaticBallPool) {
@@ -67,10 +68,7 @@ export default class BallGrid {
     this.pool = pool;
 
     const sample = this.pool.spawn(0, 0);
-    this.size = new Phaser.Structs.Size(
-      sample.width * sample.getScale(),
-      sample.height * sample.getScale()
-    );
+    this.size = new Phaser.Structs.Size(sample.body.width, sample.body.height);
     this.pool.despawn(sample);
   }
 
@@ -155,6 +153,8 @@ export default class BallGrid {
       tx = dx <= 0 ? tx - radius : tx + radius;
     }
 
+    console.log(tx, ty);
+
     const newBall = this.pool.spawn(x, y).setColor(color);
 
     const { row, col } = this.findRowAndColumns(gridBall);
@@ -216,6 +216,9 @@ export default class BallGrid {
         x: tx,
         duration: 50,
         ease: "Back.easeOut",
+        onUpdate: () => {
+          newBall.updateShadowPosition()
+        },
         onComplete: function () {
           resolve("success!");
         },
@@ -236,14 +239,10 @@ export default class BallGrid {
     this.ballsDestroyedSubject.next(destroyedCount);
     this.ballsCount -= destroyedCount;
 
-    // if (orphans.length > 0) {
-    //   await this.animateOrphans(orphans);
-    // }
-
     orphans.forEach((ball) => {
       this.ballWillBeDestroyed.next(ball);
       this.handleDestroyBall(ball);
-    })
+    });
   }
 
   generate(rows = 6) {
@@ -268,8 +267,8 @@ export default class BallGrid {
     for (let i = 0; i < count; ++i) {
       const b = balls[i] as IBall;
       b.y += dy;
-      b.setDepth(1)
-
+      b.setDepth(1);
+      b.updateShadowPosition();
       const body = b.body as Phaser.Physics.Arcade.Body;
     }
 
@@ -299,8 +298,6 @@ export default class BallGrid {
   private handleDestroyBall(ball: IBall) {
     const x = ball.x;
     const y = ball.y;
-    
-
   }
 
   private addRowToFront(row: string[]) {
@@ -315,7 +312,7 @@ export default class BallGrid {
     this.grid.unshift(gridRow);
 
     const halfCount = count * 0.5;
-    let x = middle - halfCount * width + radius * 0.5;
+    let x = middle - halfCount * width;
     let y = 0;
 
     if (this.grid.length <= 1) {
@@ -357,7 +354,7 @@ export default class BallGrid {
           break;
       }
 
-      x += width;
+      x += width + 2;
     });
 
     if (!gridRow.isStaggered) {
@@ -384,42 +381,6 @@ export default class BallGrid {
     }
 
     return balls;
-  }
-
-  private async animateOrphans(orphans: IBall[]) {
-    // move down and fade out
-    const timeline = this.scene.tweens.timeline();
-    const bottom = this.scene.scale.height * 0.9;
-
-    const tasks = orphans.map((orphan) => {
-      const y = orphan.y;
-      const dy = bottom - y;
-      const duration = dy * 0.5;
-
-      return new Promise((resolve) => {
-        timeline.add({
-          targets: orphan,
-          y: y + dy,
-          offset: 0,
-          ease: "Bounce.easeOut",
-          duration: 1000,
-          onComplete: function () {
-            // @ts-ignore
-            this.ballWillBeDestroyed.next(orphan);
-            // @ts-ignore
-            this.orphanWillBeDestroyed.next(orphan);
-            // @ts-ignore
-            this.pool.despawn(orphan);
-            resolve("success!");
-          },
-          onCompleteScope: this,
-        });
-      });
-    });
-
-    timeline.play();
-
-    await Promise.all(tasks);
   }
 
   private async animateAttachBounceAt(
@@ -720,53 +681,53 @@ export default class BallGrid {
     });
   }
 
-  private scaleMatches(matches: IBall[]) {
-    return new Promise((resolve) => {
-      for (let i = 0; i < matches.length; i++) {
-        const ball = matches[i];
-        const x = ball.x;
-        const y = ball.y;
-        this.scene.tweens.add({
-          targets: ball,
-          scale: ball.getScale() * 1.5,
-          delay: i * 50,
-          duration: 100,
-          ease: "Power0",
-          onComplete: (tween) => {
-            ball.setVisible(false);
-            var img = this.scene.add
-              .image(x, y, TextureKeys.BrokenGlass)
-              .setScale(0.1);
-            // img.setTint(ball.color);
-            this.scene.tweens.add({
-              targets: img,
-              scale: 0.5,
-              alpha: 0,
-              duration: 3000,
-              ease: "Power4",
-            });
+  // private scaleMatches(matches: IBall[]) {
+  //   return new Promise((resolve) => {
+  //     for (let i = 0; i < matches.length; i++) {
+  //       const ball = matches[i];
+  //       const x = ball.x;
+  //       const y = ball.y;
+  //       this.scene.tweens.add({
+  //         targets: ball,
+  //         scale: ball.getScale() * 1.5,
+  //         delay: i * 50,
+  //         duration: 100,
+  //         ease: "Power0",
+  //         onComplete: (tween) => {
+  //           ball.setVisible(false);
+  //           var img = this.scene.add
+  //             .image(x, y, TextureKeys.BrokenGlass)
+  //             .setScale(0.1);
+  //           // img.setTint(ball.color);
+  //           this.scene.tweens.add({
+  //             targets: img,
+  //             scale: 0.5,
+  //             alpha: 0,
+  //             duration: 3000,
+  //             ease: "Power4",
+  //           });
 
-            this.scene.add
-              .particles(TextureKeys.BrokenPiece)
-              .createEmitter({
-                speed: { min: -200, max: 200 },
-                angle: { min: 0, max: 360 },
-                scale: { start: 1, end: 0 },
-                alpha: { start: 1, end: 0 },
-                blendMode: "ADD",
-                active: true,
-                lifespan: 3000,
-                gravityY: 50,
-                tint: { start: ball.color, end: 0xffffff },
-                rotate: { start: 0, end: 360 * 5, random: true },
-              })
-              .explode(5, x, y);
-            if (i === matches.length - 1) resolve();
-          },
-        });
-      }
-    });
-  }
+  //           this.scene.add
+  //             .particles(TextureKeys.BrokenPiece)
+  //             .createEmitter({
+  //               speed: { min: -200, max: 200 },
+  //               angle: { min: 0, max: 360 },
+  //               scale: { start: 1, end: 0 },
+  //               alpha: { start: 1, end: 0 },
+  //               blendMode: "ADD",
+  //               active: true,
+  //               lifespan: 3000,
+  //               gravityY: 50,
+  //               tint: { start: ball.color, end: 0xffffff },
+  //               rotate: { start: 0, end: 360 * 5, random: true },
+  //             })
+  //             .explode(5, x, y);
+  //           if (i === matches.length - 1) resolve();
+  //         },
+  //       });
+  //     }
+  //   });
+  // }
 
   private getNeighbors(row: number, col: number, includeBottom = false) {
     const positions = this.getNeighborPositions(row, col, 1, includeBottom);
@@ -828,5 +789,26 @@ export default class BallGrid {
 
       this.grid.pop();
     }
+  }
+
+  private convertPosition(_x: number, _y: number) {
+    var x = _x * props.a;
+    var y = _y * props.h;
+    var y_ =
+      (y * props.a * props.h) / (props.b * props.h + y * (props.a - props.b));
+    var x_ = (x / props.p) * (props.p - y_);
+    var d = (y_ * props.a) / props.p / 2;
+    var width = (this.size.width / props.p) * (props.p - y_);
+    var height = (this.size.height / props.p) * (props.p - y_);
+    return {
+      position: {
+        x: 100 + d + x_ - width / 2,
+        y: 100 - y_ - height,
+      },
+      size: {
+        width: width,
+        height: height,
+      },
+    };
   }
 }

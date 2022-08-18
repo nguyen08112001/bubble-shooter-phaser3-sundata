@@ -29,20 +29,19 @@ export default class DynamicBallPool
       maxSize: -1,
       key: texture,
       frame: 0,
-      active: false,
+      active: true,
       visible: false,
-      frameQuantity: 4,
-      runChildUpdate: true
+      frameQuantity: 0,
+      immovable: false,
+      allowGravity: true,
+      runChildUpdate: true,
     };
 
     super(world, scene, Object.assign(defaults, config));
-    this.active = true
     this.texture = texture;
-
-    this.scene.game.events.on("ball-over-scene", (ball) => {
-        console.log("ball-over-scene")
-        this.despawn(ball)
-    })
+    this.scene.game.events.on("ball-over-scene", (ball: IBall) => {
+      this.despawn(ball)
+    });
   }
 
   spawn(x: number, y: number) {
@@ -56,32 +55,33 @@ export default class DynamicBallPool
 
     ball.setScale(ball.getScale());
 
-    ball.useSmallCircleCollider();
+    this.scene.physics.add.existing(ball);
+
+    const body = ball.body as Phaser.Physics.Arcade.Body;
+
+    ball.useCircleCollider();
 
     ball.emit("on-spawned");
 
     if (spawnExisting) {
-        const body = ball.body as Phaser.Physics.Arcade.Body;
-        ball.setVisible(true);
-        ball.setActive(true);
-        this.world.add(body);
-        body.enable = true
-        ball.setRandomColor();
-        body.allowGravity = false;
-        body.setImmovable(true)
+      ball.setVisible(true);
+      ball.setActive(true);
+      this.world.add(body);
+      body.enable = true;
+      ball.setRandomColor();
+      body.allowGravity = true;
     }
-
-    ball.setRandomColor();
 
     return ball;
   }
 
   despawn(ball: IBall) {
     this.killAndHide(ball);
-    ball.body.enable = false
+    ball.body.enable = false;
     this.world.remove(ball.body);
-    ball.alpha = 1;
+    ball.reInit();
     ball.body.reset(0, 0);
+    ball.updateShadowPosition();
   }
 }
 

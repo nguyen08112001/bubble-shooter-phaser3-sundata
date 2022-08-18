@@ -31,15 +31,13 @@ export default class StaticBallPool
       frame: 0,
       active: false,
       visible: false,
-      frameQuantity: 30,
+      frameQuantity: 0,
       immovable: true,
       allowGravity: false,
-      runChildUpdate: true
+      runChildUpdate: false,
     };
 
     super(world, scene, Object.assign(defaults, config));
-
-    this.active = true
 
     this.texture = texture;
   }
@@ -55,12 +53,11 @@ export default class StaticBallPool
 
     ball.setScale(ball.getScale());
 
-    this.scene.physics.add.existing(ball)
+    this.scene.physics.add.existing(ball);
 
     const body = ball.body as Phaser.Physics.Arcade.Body;
 
     ball.useCircleCollider();
-
 
     ball.emit("on-spawned");
 
@@ -69,10 +66,10 @@ export default class StaticBallPool
       ball.setActive(true);
 
       this.world.add(body);
-      body.enable = true
+      body.enable = true;
       ball.setRandomColor();
       body.allowGravity = false;
-      body.setImmovable(true)
+      body.setImmovable(true);
     }
 
     return ball;
@@ -80,12 +77,12 @@ export default class StaticBallPool
 
   despawn(ball: IBall) {
     this.killAndHide(ball);
-    ball.getShadow().setVisible(false)
-    ball.body.enable = false
+    ball.getShadow().setVisible(false);
+    ball.body.enable = false;
     this.world.remove(ball.body);
     ball.alpha = 1;
     ball.body.reset(0, 0);
-    ball.updateShadowPosition()
+    ball.updateShadowPosition();
   }
 }
 
